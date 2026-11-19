@@ -1,23 +1,124 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cover Snap</title>
-<link rel="stylesheet" href="./style.css">
+<title>Vice Cover Studio — GTA 6-style poster maker</title>
+<link rel="stylesheet" href="styles.css">
+<script type="module" src="app.js"></script>
 </head>
 <body>
-<main class="app">
-  <section class="controls">
-    <h1>Cover Snap</h1>
-    <p>A photo and a caption, made into a square cover.</p>
-    <label>Photo <input id="photo" type="file" accept="image/*"></label>
-    <label>Caption <input id="caption" type="text" maxlength="40" value="Sunset Heist"></label>
-    <button id="export" type="button">Export PNG 1080 x 1080</button>
-    <p id="status" role="status"></p>
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">VC</span>
+    <div>
+      <h1>Vice Cover Studio</h1>
+      <p>Turn your photo into a GTA 6-style poster — panels, bold lettering, sunset or neon grade.</p>
+    </div>
+  </div>
+  <div class="topbar-note">Photos stay on your machine. Nothing is uploaded.</div>
+</header>
+
+<main class="editor">
+  <section class="preview-col">
+    <div class="preview-wrap" id="previewWrap">
+      <canvas id="coverCanvas" width="1080" height="1080" aria-label="Cover preview — click a panel to select it, drag to move its photo"></canvas>
+      <div class="preview-hint" id="previewHint">Drop a photo here, or load one to start</div>
+    </div>
+    <noscript><p class="preview-hint">Vice Cover Studio needs JavaScript to draw your cover.</p></noscript>
+    <div class="preview-bar">
+      <span id="selectedPanelLabel">No panel selected — click a panel to move its photo</span>
+      <span id="statusLine" class="status"></span>
+    </div>
   </section>
-  <canvas id="cover" width="1080" height="1080" aria-label="The cover"></canvas>
+
+  <aside class="controls">
+    <section class="card" id="photoCard">
+      <h2>1 · Photo</h2>
+      <button class="btn primary" id="loadPhotoBtn" type="button">Load a photo</button>
+      <input type="file" id="photoFile" accept="image/*" multiple hidden>
+      <div class="sample-row">
+        <span class="label">Or try a sample:</span>
+        <button class="btn small" id="sampleBoulevard" type="button">Boulevard</button>
+        <button class="btn small" id="samplePier" type="button">Pier</button>
+      </div>
+      <ul class="photo-list" id="photoList"></ul>
+    </section>
+
+    <section class="card">
+      <h2>2 · Layout</h2>
+      <div class="seg" id="layoutSeg">
+        <button type="button" data-layout="hero" class="active">Hero + 2</button>
+        <button type="button" data-layout="strip">Strip of 3</button>
+        <button type="button" data-layout="grid">Grid of 4</button>
+      </div>
+      <p class="help">Click a panel in the preview, then drag it to pan the photo, or scroll to zoom.</p>
+      <div class="row">
+        <div class="seg small" id="fitSeg">
+          <button type="button" data-fit="fill" class="active">Fill</button>
+          <button type="button" data-fit="fit">Fit</button>
+        </div>
+        <label class="slider-label">Zoom
+          <input type="range" id="zoomRange" min="50" max="300" value="100">
+        </label>
+      </div>
+      <button class="btn small" id="centerPanelBtn" type="button">Centre photo in panel</button>
+    </section>
+
+    <section class="card">
+      <h2>3 · Caption</h2>
+      <label class="field">Caption
+        <input type="text" id="captionText" value="VICE CITY" maxlength="24" autocomplete="off">
+      </label>
+      <label class="field">Tagline
+        <input type="text" id="taglineText" value="STREETS OF THE SUN" maxlength="40" autocomplete="off">
+      </label>
+      <div class="row">
+        <label class="slider-label">Size
+          <input type="range" id="captionSize" min="40" max="140" value="96">
+        </label>
+        <div class="swatches" id="captionColors">
+          <button type="button" data-color="#ffffff" class="swatch active" style="--c:#ffffff" aria-label="White"></button>
+          <button type="button" data-color="#ffd400" class="swatch" style="--c:#ffd400" aria-label="Yellow"></button>
+          <button type="button" data-color="#ff5ea8" class="swatch" style="--c:#ff5ea8" aria-label="Pink"></button>
+          <button type="button" data-color="#37e6ff" class="swatch" style="--c:#37e6ff" aria-label="Cyan"></button>
+        </div>
+      </div>
+      <div class="seg" id="captionPosSeg">
+        <button type="button" data-pos="top">Top banner</button>
+        <button type="button" data-pos="bottom" class="active">Bottom banner</button>
+        <button type="button" data-pos="diagonal">Diagonal</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>4 · Grade &amp; finish</h2>
+      <div class="seg" id="gradeSeg">
+        <button type="button" data-grade="sunset" class="active">Sunset</button>
+        <button type="button" data-grade="neon">Neon</button>
+        <button type="button" data-grade="none">None</button>
+      </div>
+      <label class="slider-label">Grade strength
+        <input type="range" id="gradeStrength" min="0" max="100" value="70">
+      </label>
+      <label class="check"><input type="checkbox" id="halftoneCheck" checked> Halftone dots &amp; vignette</label>
+    </section>
+
+    <section class="card export-card">
+      <h2>5 · Export</h2>
+      <div class="seg" id="exportSizeSeg">
+        <button type="button" data-size="1080x1080" class="active">Square 1080</button>
+        <button type="button" data-size="1080x1350">Portrait 1080×1350</button>
+        <button type="button" data-size="1920x1080">Wide 1920×1080</button>
+      </div>
+      <button class="btn primary big" id="exportBtn" type="button">Export PNG</button>
+      <p class="help">Drawn at full size — panels, grade, effects and lettering included.</p>
+    </section>
+  </aside>
 </main>
-<script type="module" src="./src/main.js"></script>
+
+<footer class="footnote">
+  Original artwork made with your own photos. No Rockstar Games logo, artwork or font is used here.
+</footer>
 </body>
 </html>
